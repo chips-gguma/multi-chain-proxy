@@ -1,7 +1,12 @@
 package com.sp.fc.web.controller;
 
+import com.sp.fc.web.student.StudentManager;
+import com.sp.fc.web.teacher.Teacher;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -10,9 +15,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping("/teacher")
 public class TeacherController {
 
+    @Autowired
+    private StudentManager studentManager;
+
     @PreAuthorize("hasAnyAuthority('ROLE_TEACHER')")
     @GetMapping("/main")
-    public String main(){
+    public String main(@AuthenticationPrincipal Teacher teacher, Model model) {
+
+        // 해당 페이지 쪽으로 학생 리스트를 넘겨 줌
+        model.addAttribute("studentList", studentManager.myStudents(teacher.getId()));
         return "TeacherMain";
     }
 
