@@ -20,21 +20,35 @@ public class TeacherManager implements AuthenticationProvider, InitializingBean 
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+        if(authentication instanceof UsernamePasswordAuthenticationToken) {
+            UsernamePasswordAuthenticationToken token = (UsernamePasswordAuthenticationToken) authentication;
+            if(teacherDB.containsKey(token.getName())) {
+                return getAuthenticationToken(token.getName());
+            }
+            return null;
+
+        }
         TeacherAuthenticationToken token = (TeacherAuthenticationToken) authentication;
         if(teacherDB.containsKey(token.getCredentials())){
-            Teacher teacher = teacherDB.get(token.getCredentials());
-            return TeacherAuthenticationToken.builder()
-                    .principal(teacher)
-                    .details(teacher.getUsername())
-                    .authenticated(true)
-                    .build();
+            return getAuthenticationToken(token.getCredentials());
         }
         return null;
     }
 
+    private TeacherAuthenticationToken getAuthenticationToken(String id) {
+        Teacher teacher = teacherDB.get(id);
+        return TeacherAuthenticationToken.builder()
+                .principal(teacher)
+                .details(teacher.getUsername())
+                .authenticated(true)
+                .build();
+    }
+
     @Override
     public boolean supports(Class<?> authentication) {
-        return authentication == TeacherAuthenticationToken.class;
+        return authentication == TeacherAuthenticationToken.class ||
+                authentication == UsernamePasswordAuthenticationToken.class // httpBasic은 userNamePasswordToken을 받으므로 핸들링 필요
+                ;
     }
 
     @Override

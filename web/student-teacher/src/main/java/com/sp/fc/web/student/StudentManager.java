@@ -1,5 +1,7 @@
 package com.sp.fc.web.student;
 
+import com.sp.fc.web.teacher.Teacher;
+import com.sp.fc.web.teacher.TeacherAuthenticationToken;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -20,22 +22,34 @@ public class StudentManager implements AuthenticationProvider, InitializingBean 
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+        if(authentication instanceof UsernamePasswordAuthenticationToken) {
+            UsernamePasswordAuthenticationToken token = (UsernamePasswordAuthenticationToken) authentication;
+            if(studentDB.containsKey(token.getName())) {
+                return getAuthenticationToken(token.getName());
+            }
+            return null;
+        }
         StudentAuthenticationToken token = (StudentAuthenticationToken) authentication;
         if(studentDB.containsKey(token.getCredentials())){
-            Student student = studentDB.get(token.getCredentials());
-            return StudentAuthenticationToken.builder()
-                    .principal(student)
-                    .details(student.getUsername())
-                    .authenticated(true)
-                    .authorities(student.getRole())
-                    .build();
+            return getAuthenticationToken(token.getCredentials());
         }
         return null;
     }
 
+    private StudentAuthenticationToken getAuthenticationToken(String id) {
+        Student student = studentDB.get(id);
+        return StudentAuthenticationToken.builder()
+                .principal(student)
+                .details(student.getUsername())
+                .authenticated(true)
+                .build();
+    }
+
     @Override
     public boolean supports(Class<?> authentication) {
-        return authentication == StudentAuthenticationToken.class;
+        return authentication == StudentAuthenticationToken.class ||
+                authentication == UsernamePasswordAuthenticationToken.class // httpBasic은 userNamePasswordToken을 받으므로 핸들링 필요
+                ;
     }
 
     // 서비스
